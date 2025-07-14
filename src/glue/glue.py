@@ -106,3 +106,65 @@ def parse_dynamodb_item(item):
             return [convert_dynamodb_types(v) for v in value['L']]
         return value
     return {k: convert_dynamodb_types(v) for k, v in item.items()}
+
+
+def filter_completed_trips(records):
+    """
+    Filter trips that have all critical columns present and non-null/non-empty.
+    Critical columns from trip_start and trip_end combined:
+      - trip_id
+      - pickup_location_id
+      - dropoff_location_id
+      - vendor_id
+      - pickup_datetime
+      - dropoff_datetime
+      - fare_amount
+      - payment_type
+      - trip_distance
+    """
+    completed_trips_by_date = defaultdict(list)
+
+    required_fields = [
+        'trip_id',
+        'pickup_location_id',
+        'dropoff_location_id',
+        'vendor_id',
+        'pickup_datetime',
+        'dropoff_datetime',
+        'fare_amount',
+        'payment_type',
+        'trip_distance'
+    ]
+
+    for record in records:
+        trip = parse_dynamodb_item(record)
+
+        # Check all required fields exist and are not null/empty
+        if all(field in trip and trip[field] not in (None, '', 'null') for field in required_fields):
+
+            # Validate fare_amount is positive number
+            try:
+                fare_amount = Decimal(str(trip['fare_amount']))
+                if fare_amount <= 0:
+                    logger.warning(f"Skipping trip_id {trip.get('trip_id')} due to non-positive fare_amount")
+                    continue
+            except Exception as e:
+                logger.warning(f"Skipping trip_id {trip.get('trip_id')} due to invalid fare_amount: {e}")
+                continue
+
+            # Parse dropoff date
+            try:
+                dropoff_datetime_str = trip['dropoff_datetime']
+                if dropoff_datetime_str.endswith('Z'):
+                    dropoff_datetime_str = dropoff_datetime_str[:-1]
+                dropoff_date = datetime.fromisoformat(dropoff_datetime_str).date().isoformat()
+            except Exception as e:
+                logger.warning(f"Invalid dropoff_datetime for trip_id {trip.get('trip_id')}: {e}")
+                continue
+
+            completed_trips_by_date[dropoff_date].append(trip)
+        else:
+            logger.warning(f"Incomplete or invalid trip data for trip_id {trip.get('trip_id')}")
+
+    logger.info(f"Found completed trips for {len(completed_trips_by_date)} days")
+    return completed_trips_by_date
