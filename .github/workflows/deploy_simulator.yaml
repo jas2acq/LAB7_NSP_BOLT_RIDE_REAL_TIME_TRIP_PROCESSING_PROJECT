@@ -22,3 +22,12 @@ jobs:
         run: |
           pip install boto3 pandas dotenv
       - name: Run stream simulation
+
+
+        run: |
+          python src/stream_simulator/stream_simulate.py
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          KINESIS_STREAM_NAME: ${{ secrets.KINESIS_STREAM_NAME }}
