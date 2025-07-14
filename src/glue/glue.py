@@ -77,3 +77,17 @@ def upload_logs_to_s3():
         logger.info(f"Uploaded logs to s3://{S3_BUCKET}/{s3_key}")
     except Exception as e:
         logger.error(f"Failed to upload logs to S3: {e}")
+
+
+def scan_dynamodb():
+    """Scan DynamoDB table to retrieve all trip records."""
+    try:
+        records = []
+        paginator = dynamodb.get_paginator('scan')
+        for page in paginator.paginate(TableName=TABLE_NAME):
+            records.extend(page.get('Items', []))
+        logger.info(f"Retrieved {len(records)} records from {TABLE_NAME}")
+        return records
+    except Exception as e:
+        logger.error(f"Failed to scan DynamoDB table: {e}")
+        raise
