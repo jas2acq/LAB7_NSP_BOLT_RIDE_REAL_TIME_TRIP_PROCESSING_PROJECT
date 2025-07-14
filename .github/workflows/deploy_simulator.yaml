@@ -1,0 +1,8 @@
+name: Run Data Stream Simulation
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/deploy_simulator.yaml' 
+      - 'src/stream_simulator/**'
+  workflow_dispatch:
