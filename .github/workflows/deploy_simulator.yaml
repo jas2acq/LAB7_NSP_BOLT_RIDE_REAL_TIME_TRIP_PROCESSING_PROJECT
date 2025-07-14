@@ -6,3 +6,12 @@ on:
       - '.github/workflows/deploy_simulator.yaml' 
       - 'src/stream_simulator/**'
   workflow_dispatch:
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
