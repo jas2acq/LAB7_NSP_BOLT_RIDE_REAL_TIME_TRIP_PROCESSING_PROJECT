@@ -32,13 +32,12 @@ jobs:
       with:
         python-version: '3.9'
 
-    # Package Lambda 1
+    # Package Lambda
     - name: Package Lambda
       run: |
         cd src/lambda
         pip install -r requirements.txt -t .
-        zip -r ../../../lambda-deployment.zip .
-        cd ../../../
+        zip -r ../../lambda-deployment.zip .
 
     # Upload Lambda ZIP to S3
     - name: Upload Lambda ZIP to S3
@@ -50,7 +49,6 @@ jobs:
       run: |
         aws lambda wait function-updated --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }} --region ${{ secrets.AWS_REGION }}
 
-
     # Update Lambda code from S3
     - name: Update Lambda code from S3
       run: |
@@ -60,12 +58,10 @@ jobs:
           --s3-key scripts/lambda/lambda-deployment.zip \
           --region ${{ secrets.AWS_REGION }}
 
-
     # Wait for Lambda code update to complete
     - name: Wait for Lambda code update to complete
       run: |
         aws lambda wait function-updated --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }} --region ${{ secrets.AWS_REGION }}
-
 
     # Update Lambda configuration
     - name: Update Lambda configuration
