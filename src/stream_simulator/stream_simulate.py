@@ -44,3 +44,15 @@ def setup_logging():
     return logger
 
 logger = setup_logging()
+
+def load_data(csv_path):
+    try:
+        df = pd.read_csv(csv_path)
+        logger.info(f"Loaded {len(df)} records from {csv_path}")
+        return df
+    except FileNotFoundError as e:
+        logger.error(f"CSV file not found: {csv_path}")
+        raise e
+    except pd.errors.ParserError as e:
+        logger.error(f"Error parsing CSV file: {e}")
+        raise e
