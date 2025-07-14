@@ -1,0 +1,9 @@
+name: DeployGlue Scripts
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/deploy_glue.yaml'
+      - 'src/glue/**'
+  workflow_dispatch:
