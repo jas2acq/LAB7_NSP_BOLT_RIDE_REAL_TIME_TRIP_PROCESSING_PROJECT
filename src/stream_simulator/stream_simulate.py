@@ -69,3 +69,66 @@ def init_kinesis_client():
     except Exception as e:
         logger.error(f"Failed to initialize Kinesis client: {e}")
         raise e
+
+
+def data_stream_generator(df, name, base_rate=1, spike_chance=0.05, max_spike=100, outage_chance=0.1, outage_duration_range=(5, 15)):
+    """
+    Generator that sends each unique record exactly once in random order,
+    with random spikes and outages.
+    """
+    indices = list(df.index)
+    random.shuffle(indices)
+    total_records = len(indices)
+    logger.info(f"{name} stream generator shuffled {total_records} unique records.")
+
+    outage = False
+    outage_end_time = None
+    sent_records = 0
+
+    while sent_records < total_records:
+        if outage:
+            if datetime.utcnow() >= outage_end_time:
+                outage = False
+                logger.info(f"{name} stream outage ended, resuming.")
+            else:
+                # During outage, yield empty batch and sleep 1 sec
+                yield []
+                time.sleep(1)
+                continue
+        else:
+            # Randomly start an outage
+            if random.random() < outage_chance:
+                outage = True
+                outage_length = random.uniform(*outage_duration_range)
+                outage_end_time = datetime.utcnow() + timedelta(seconds=outage_length)
+                logger.warning(f"{name} stream outage started for {outage_length:.1f} seconds")
+                yield []
+                time.sleep(1)
+                continue
+
+        # Determine number of records to send this iteration
+        if random.random() < spike_chance:
+            num_to_send = random.randint(base_rate, max_spike)
+            logger.info(f"{name} stream spike: sending {num_to_send} records")
+        else:
+            # Normally send base_rate records (usually 1)
+            num_to_send = base_rate
+
+        # Adjust if near end of data
+        remaining = total_records - sent_records
+        num_to_send = min(num_to_send, remaining)
+
+        batch = []
+        for _ in range(num_to_send):
+            idx = indices[sent_records]
+            record = df.loc[idx].to_dict()
+            record['event_timestamp'] = datetime.utcnow().isoformat() + 'Z'
+            batch.append(json.dumps(record))
+            sent_records += 1
+
+        yield batch
+
+        # Sleep roughly 1 second with jitter
+        time.sleep(max(1 + random.uniform(-0.3, 0.3), 0.1))
+
+    logger.info(f"{name} stream generator exhausted all unique records.")
