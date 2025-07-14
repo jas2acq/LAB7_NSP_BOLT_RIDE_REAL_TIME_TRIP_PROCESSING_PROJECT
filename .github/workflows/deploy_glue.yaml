@@ -7,3 +7,10 @@ on:
       - '.github/workflows/deploy_glue.yaml'
       - 'src/glue/**'
   workflow_dispatch:
+
+jobs:
+  deploy_glue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
