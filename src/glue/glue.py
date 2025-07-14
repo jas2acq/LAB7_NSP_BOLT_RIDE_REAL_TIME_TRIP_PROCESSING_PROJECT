@@ -168,3 +168,36 @@ def filter_completed_trips(records):
 
     logger.info(f"Found completed trips for {len(completed_trips_by_date)} days")
     return completed_trips_by_date
+
+
+def calculate_kpis(trips_by_date):
+    """Calculate KPIs for each day."""
+    kpis = {}
+    for date, trips in trips_by_date.items():
+        fares = []
+        for trip in trips:
+            try:
+                fares.append(Decimal(str(trip['fare_amount'])))
+            except Exception as e:
+                logger.warning(f"Skipping trip with invalid fare_amount on {date}: {e}")
+
+        if not fares:
+            logger.info(f"No valid fares for {date}, skipping KPIs")
+            continue
+
+        total_fare = sum(fares)
+        count_trips = len(fares)
+        average_fare = total_fare / count_trips if count_trips > 0 else Decimal('0')
+        max_fare = max(fares)
+        min_fare = min(fares)
+
+        kpis[date] = {
+            'date': date,
+            'total_fare': float(total_fare),
+            'count_trips': count_trips,
+            'average_fare': float(average_fare),
+            'max_fare': float(max_fare),
+            'min_fare': float(min_fare)
+        }
+        logger.info(f"Calculated KPIs for {date}: {kpis[date]}")
+    return kpis
