@@ -1,0 +1,9 @@
+name: Deploy Lambda Functions
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/deploy_lambda.yaml' 
+      - 'src/lambda/**'
+  workflow_dispatch:
