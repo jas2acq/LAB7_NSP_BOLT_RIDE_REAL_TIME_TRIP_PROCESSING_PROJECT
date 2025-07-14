@@ -177,3 +177,23 @@ if __name__ == "__main__":
 
     gen_start = data_stream_generator(df_start, "trip_start", base_rate=20, spike_chance=0.05, max_spike=100, outage_chance=0.1)
     gen_end = data_stream_generator(df_end, "trip_end", base_rate=20, spike_chance=0.03, max_spike=50, outage_chance=0.15)
+
+
+    try:
+        while True:
+            batch_start = next(gen_start, None)
+            batch_end = next(gen_end, None)
+
+            if batch_start is None and batch_end is None:
+                logger.info("Both trip_start and trip_end streams exhausted. Exiting.")
+                break
+
+            if batch_start:
+                send_batch_to_kinesis(batch_start, kinesis_client, KINESIS_STREAM_NAME, "trip_start")
+            if batch_end:
+                send_batch_to_kinesis(batch_end, kinesis_client, KINESIS_STREAM_NAME, "trip_end")
+
+    except KeyboardInterrupt:
+        logger.info("Streaming interrupted by user. Exiting gracefully.")
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}", exc_info=True)
