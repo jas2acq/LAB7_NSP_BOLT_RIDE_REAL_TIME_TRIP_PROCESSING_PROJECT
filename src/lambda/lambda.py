@@ -62,3 +62,30 @@ def convert_floats_to_decimal(obj):
 def is_blank(val):
     # Returns True if val is None, empty string, only whitespace, or 'null'
     return val is None or (isinstance(val, str) and val.strip() == '') or val == 'null'
+
+
+def upsert_error_record(error_table, trip_id, reason, original_data):
+    timestamp = datetime.utcnow().isoformat() + 'Z'
+    try:
+        # Convert floats in original_data to Decimal before writing to DynamoDB
+        original_data = convert_floats_to_decimal(original_data)
+
+        response = error_table.update_item(
+            Key={'trip_id': trip_id},
+            UpdateExpression="""
+                SET error_reasons = list_append(if_not_exists(error_reasons, :empty_list), :new_reason),
+                    error_timestamps = list_append(if_not_exists(error_timestamps, :empty_list), :new_timestamp),
+                    original_data = :original_data
+            """,
+            ExpressionAttributeValues={
+                ':new_reason': [reason],
+                ':new_timestamp': [timestamp],
+                ':empty_list': [],
+                ':original_data': original_data
+            },
+            ReturnValues="UPDATED_NEW"
+        )
+        logger.info(f"Upserted error record for trip_id {trip_id} with reason: {reason}")
+    except Exception as e:
+        logger.error(f"Failed to upsert error record for trip_id {trip_id}: {e}", exc_info=True)
+        raise
