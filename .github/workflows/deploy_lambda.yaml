@@ -39,3 +39,8 @@ jobs:
         pip install -r requirements.txt -t .
         zip -r ../../../lambda-deployment.zip .
         cd ../../../
+
+    # Upload Lambda ZIP to S3
+    - name: Upload Lambda ZIP to S3
+      run: |
+        aws s3 cp lambda-deployment.zip s3://${{ secrets.PROJECT_BUCKET }}/scripts/lambda/lambda-deployment.zip
