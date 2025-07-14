@@ -18,12 +18,12 @@ jobs:
 
       - name: Deploy Glue ETL Scripts
         run: |
-          if [ -d "glue_scripts" ] && [ "$(ls -A glue_scripts)" ]; then
+          if [ -d "src/glue" ] && [ "$(ls -A src/glue)" ]; then
             echo "Uploading Glue ETL scripts..."
             aws s3 cp glue_scripts/ s3://${{ secrets.PROJECT_BUCKET }}/glue_scripts/ --recursive 
             echo "Uploaded Glue scripts:"
             aws s3 ls s3://${{ secrets.PROJECT_BUCKET }}/glue_scripts/
           else
-            echo "No Glue scripts found in glue_scripts/"
+            echo "No Glue scripts found in src/glue/"
             exit 1
           fi
