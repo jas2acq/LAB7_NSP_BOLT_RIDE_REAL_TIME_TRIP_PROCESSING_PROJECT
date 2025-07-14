@@ -44,3 +44,8 @@ jobs:
     - name: Upload Lambda ZIP to S3
       run: |
         aws s3 cp lambda-deployment.zip s3://${{ secrets.PROJECT_BUCKET }}/scripts/lambda/lambda-deployment.zip
+
+    # Wait for Lambda to be ready before update
+    - name: Wait for Lambda to be ready before update
+      run: |
+        aws lambda wait function-updated --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }} --region ${{ secrets.AWS_REGION }}
