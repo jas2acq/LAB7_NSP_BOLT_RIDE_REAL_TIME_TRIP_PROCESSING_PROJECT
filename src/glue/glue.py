@@ -201,3 +201,21 @@ def calculate_kpis(trips_by_date):
         }
         logger.info(f"Calculated KPIs for {date}: {kpis[date]}")
     return kpis
+
+
+def write_kpis_to_s3(kpis):
+    """Write KPIs to S3 as JSON files."""
+    for date, kpi in kpis.items():
+        try:
+            year, month, day = date.split('-')
+            s3_key = f"{S3_KPI_PREFIX}{year}/{month}/{day}/{date}.json"
+            s3.put_object(
+                Bucket=S3_BUCKET,
+                Key=s3_key,
+                Body=json.dumps(kpi, indent=2).encode('utf-8'),
+                ContentType='application/json'
+            )
+            logger.info(f"Wrote KPIs to s3://{S3_BUCKET}/{s3_key}")
+        except Exception as e:
+            logger.error(f"Failed to write KPIs for {date} to S3: {e}")
+            raise
