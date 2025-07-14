@@ -56,3 +56,16 @@ def load_data(csv_path):
     except pd.errors.ParserError as e:
         logger.error(f"Error parsing CSV file: {e}")
         raise e
+
+def init_kinesis_client():
+    try:
+        client = boto3.client(
+            'kinesis',
+            region_name=AWS_REGION,
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+        )
+        return client
+    except Exception as e:
+        logger.error(f"Failed to initialize Kinesis client: {e}")
+        raise e
