@@ -58,3 +58,7 @@ def convert_floats_to_decimal(obj):
         return [convert_floats_to_decimal(item) for item in obj]
     else:
         return obj
+
+def is_blank(val):
+    # Returns True if val is None, empty string, only whitespace, or 'null'
+    return val is None or (isinstance(val, str) and val.strip() == '') or val == 'null'
