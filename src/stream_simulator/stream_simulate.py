@@ -132,3 +132,28 @@ def data_stream_generator(df, name, base_rate=1, spike_chance=0.05, max_spike=10
         time.sleep(max(1 + random.uniform(-0.3, 0.3), 0.1))
 
     logger.info(f"{name} stream generator exhausted all unique records.")
+
+
+def send_batch_to_kinesis(batch, kinesis_client, stream_name, source_name):
+    if not batch:
+        logger.info(f"No records to send for {source_name} (possible outage).")
+        return
+    records = []
+    for record_str in batch:
+        partition_key = str(random.randint(1, 1000000))
+        records.append({'Data': record_str.encode('utf-8'), 'PartitionKey': partition_key})
+    max_records_per_call = 500
+    for i in range(0, len(records), max_records_per_call):
+        chunk = records[i:i+max_records_per_call]
+        try:
+            response = kinesis_client.put_records(
+                StreamName=stream_name,
+                Records=chunk
+            )
+            failed_count = response.get('FailedRecordCount', 0)
+            if failed_count > 0:
+                logger.warning(f"{failed_count} records failed to put to Kinesis for {source_name} batch")
+            logger.info(f"Sent {len(chunk)} records to Kinesis for {source_name}")
+        except (BotoCoreError, ClientError) as e:
+            logger.error(f"Error sending {source_name} records to Kinesis: {e}")
+            time.sleep(5)
