@@ -49,3 +49,13 @@ jobs:
     - name: Wait for Lambda to be ready before update
       run: |
         aws lambda wait function-updated --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }} --region ${{ secrets.AWS_REGION }}
+
+
+    # Update Lambda code from S3
+    - name: Update Lambda code from S3
+      run: |
+        aws lambda update-function-code \
+          --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }} \
+          --s3-bucket ${{ secrets.PROJECT_BUCKET }} \
+          --s3-key scripts/lambda/lambda-deployment.zip \
+          --region ${{ secrets.AWS_REGION }}
