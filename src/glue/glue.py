@@ -91,3 +91,18 @@ def scan_dynamodb():
     except Exception as e:
         logger.error(f"Failed to scan DynamoDB table: {e}")
         raise
+
+
+def parse_dynamodb_item(item):
+    """Parse DynamoDB item into a dictionary with native Python types."""
+    def convert_dynamodb_types(value):
+        if 'S' in value:
+            return value['S']
+        elif 'N' in value:
+            return Decimal(value['N'])
+        elif 'M' in value:
+            return {k: convert_dynamodb_types(v) for k, v in value['M'].items()}
+        elif 'L' in value:
+            return [convert_dynamodb_types(v) for v in value['L']]
+        return value
+    return {k: convert_dynamodb_types(v) for k, v in item.items()}
