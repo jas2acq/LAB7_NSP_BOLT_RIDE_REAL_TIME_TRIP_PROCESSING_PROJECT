@@ -60,3 +60,20 @@ def write_state_file(processed_dates):
     except Exception as e:
         logger.error(f"Failed to write state file: {e}")
         raise
+
+
+def upload_logs_to_s3():
+    """Upload logs to S3."""
+    try:
+        log_content = log_buffer.getvalue()
+        timestamp = datetime.utcnow().strftime('%Y-%m-%d-%H-%M-%S-%f')
+        s3_key = f"{S3_LOG_PREFIX}{timestamp}.log"
+        s3.put_object(
+            Bucket=S3_BUCKET,
+            Key=s3_key,
+            Body=log_content.encode('utf-8'),
+            ContentType='text/plain'
+        )
+        logger.info(f"Uploaded logs to s3://{S3_BUCKET}/{s3_key}")
+    except Exception as e:
+        logger.error(f"Failed to upload logs to S3: {e}")
