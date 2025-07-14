@@ -48,3 +48,13 @@ def create_table_if_not_exists(table_name, key_name):
         else:
             logger.error(f"Error checking table existence: {e}", exc_info=True)
             raise
+
+def convert_floats_to_decimal(obj):
+    if isinstance(obj, float):
+        return Decimal(str(obj))
+    elif isinstance(obj, dict):
+        return {k: convert_floats_to_decimal(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_floats_to_decimal(item) for item in obj]
+    else:
+        return obj
