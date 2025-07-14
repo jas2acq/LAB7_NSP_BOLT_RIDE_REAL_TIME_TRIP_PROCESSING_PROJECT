@@ -59,3 +59,9 @@ jobs:
           --s3-bucket ${{ secrets.PROJECT_BUCKET }} \
           --s3-key scripts/lambda/lambda-deployment.zip \
           --region ${{ secrets.AWS_REGION }}
+
+
+    # Wait for Lambda code update to complete
+    - name: Wait for Lambda code update to complete
+      run: |
+        aws lambda wait function-updated --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }} --region ${{ secrets.AWS_REGION }}
