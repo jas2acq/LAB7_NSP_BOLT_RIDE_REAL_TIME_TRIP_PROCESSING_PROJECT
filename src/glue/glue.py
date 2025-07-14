@@ -219,3 +219,62 @@ def write_kpis_to_s3(kpis):
         except Exception as e:
             logger.error(f"Failed to write KPIs for {date} to S3: {e}")
             raise
+
+
+def main():
+    """Main function for the Glue job."""
+    try:
+        # Default processing date is yesterday
+        yesterday = (datetime.utcnow().date() - timedelta(days=1)).isoformat()
+        logger.info(f"Default processing date: {yesterday}")
+
+        # Read processed dates from state file
+        processed_dates = read_state_file()
+
+        # Scan all records from DynamoDB
+        records = scan_dynamodb()
+        if not records:
+            logger.info("No records found in DynamoDB, exiting.")
+            upload_logs_to_s3()
+            return
+
+        # Filter completed trips grouped by dropoff date
+        trips_by_date = filter_completed_trips(records)
+
+        # Find unprocessed dates
+        unprocessed_dates = [date for date in trips_by_date.keys() if date not in processed_dates]
+
+        # Dates to process: yesterday + any unprocessed dates
+        dates_to_process = sorted(set(unprocessed_dates + [yesterday]))
+        logger.info(f"Dates to process: {dates_to_process}")
+
+        # Filter trips for dates to process
+        trips_to_process = {date: trips_by_date[date] for date in dates_to_process if date in trips_by_date}
+        if not trips_to_process:
+            logger.info("No trips to process for specified dates, exiting.")
+            upload_logs_to_s3()
+            return
+
+        # Calculate KPIs
+        kpis = calculate_kpis(trips_to_process)
+        if not kpis:
+            logger.info("No KPIs calculated, exiting.")
+            upload_logs_to_s3()
+            return
+
+        # Write KPIs to S3
+        write_kpis_to_s3(kpis)
+
+        # Update state file with processed dates
+        processed_dates.extend(dates_to_process)
+        write_state_file(processed_dates)
+
+        logger.info("Glue job completed successfully.")
+        upload_logs_to_s3()
+    except Exception as e:
+        logger.error(f"Glue job failed: {e}")
+        upload_logs_to_s3()
+        raise
+
+if __name__ == "__main__":
+    main()
