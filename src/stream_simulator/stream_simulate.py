@@ -157,3 +157,23 @@ def send_batch_to_kinesis(batch, kinesis_client, stream_name, source_name):
         except (BotoCoreError, ClientError) as e:
             logger.error(f"Error sending {source_name} records to Kinesis: {e}")
             time.sleep(5)
+
+
+if __name__ == "__main__":
+    logger.info("Starting independent streaming of trip_start and trip_end to Kinesis Data Streams")
+
+    try:
+        df_start = load_data(TRIP_START_CSV)
+        df_end = load_data(TRIP_END_CSV)
+    except Exception:
+        logger.critical("Failed to load data, exiting.")
+        sys.exit(1)
+
+    try:
+        kinesis_client = init_kinesis_client()
+    except Exception:
+        logger.critical("Failed to initialize Kinesis client, exiting.")
+        sys.exit(1)
+
+    gen_start = data_stream_generator(df_start, "trip_start", base_rate=20, spike_chance=0.05, max_spike=100, outage_chance=0.1)
+    gen_end = data_stream_generator(df_end, "trip_end", base_rate=20, spike_chance=0.03, max_spike=50, outage_chance=0.15)
